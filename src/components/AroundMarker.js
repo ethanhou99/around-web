@@ -1,42 +1,37 @@
 import React from 'react';
-import {
-  Marker,
-  InfoWindow
-} from "react-google-maps";
-import '../styles/AroundMarker.css';
+import { Marker, InfoWindow } from 'react-google-maps';
+import PropTypes from 'prop-types';
 
 export class AroundMarker extends React.Component {
+  static propTypes = {
+    post: PropTypes.object.isRequired,
+  }
+
   state = {
     isOpen: false,
   }
 
-  onToggleOpen = () => {
-    this.setState(({ isOpen }) => ({
-      isOpen: !isOpen,
-    }))
+  handleToggle = () => {
+    this.setState((prevState) => ({ isOpen: !prevState.isOpen }));
   }
 
   render() {
-    const { location, user, message, url } = this.props.post;
-
+    const { user, message, url, location } = this.props.post;
+    const { lat, lon } = location;
     return (
       <Marker
-        position={{ lat: location.lat, lng: location.lon }}
-        onMouseOver={this.onToggleOpen}
-        onMouseOut={this.onToggleOpen}
+        position={{ lat, lng: lon }}
+        onMouseOver={this.handleToggle}
+        onMouseOut={this.handleToggle}
       >
-        {(
-          this.state.isOpen ?
-            (
-              <InfoWindow onCloseClick={this.onToggleOpen}>
-                <div>
-                  <img src={url} alt={message} class="around-marker-image" />
-                  <div>{`${user}: ${message}`}</div>
-                </div>
-              </InfoWindow>
-            ) :
-            null
-        )}
+        {this.state.isOpen ? (
+          <InfoWindow>
+            <div>
+              <img src={url} alt={message} className="around-marker-image"/>
+              <p>{`${user}: ${message}`}</p>
+            </div>
+          </InfoWindow>
+        ) : null}
       </Marker>
     );
   }

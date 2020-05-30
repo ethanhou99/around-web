@@ -1,139 +1,109 @@
 import React from 'react';
 import { Tabs, Spin, Row, Col } from 'antd';
-import { CreatePostButton } from './CreatePostButton';
-import { Gallery } from './Gallery';
-import { AroundMap } from './AroundMap';
 import {
   GEO_OPTIONS,
   POS_KEY,
-  TOKEN_KEY,
   API_ROOT,
   AUTH_HEADER,
+  TOKEN_KEY,
   POST_TYPE_IMAGE,
   POST_TYPE_VIDEO,
+  POST_TYPE_UNKNOWN,
 } from '../constants';
-import '../styles/Home.css';
+import { Gallery } from './Gallery';
+import { CreatePostButton } from './CreatePostButton';
+import { AroundMap } from './AroundMap';
 
 const { TabPane } = Tabs;
+
 export class Home extends React.Component {
   state = {
-    loadingGeolocation: false,
-    loadingPosts: false,
-    errorMessage: null,
+    isLoadingGeoLocation: false,
+    isLoadingPosts: false,
+    error: '',
     posts: [],
   }
-  getGeolocation() {
-    this.setState({
-      loadingGeolocation: true,
-      errorMessage: null,
-    });
-    if ('geolocation' in navigator) {
+
+  componentDidMount() {
+    if ("geolocation" in navigator) {
+      this.setState({ isLoadingGeoLocation: true, error: '' });
       navigator.geolocation.getCurrentPosition(
-        this.onGeolocationSuccess,
-        this.onGeolocationFailure,
+        this.onSuccessLoadGeoLocation,
+        this.onFailedLoadGeoLocation,
         GEO_OPTIONS,
       );
     } else {
-      this.setState({
-        loadingGeolocation: false,
-        errorMessage: 'Your browser does not support geolocation.',
-      });
+      this.setState({ error: 'Geolocation is not supported.'});
     }
   }
-  onGeolocationSuccess = (position) => {
-    this.setState({
-      loadingGeolocation: false,
-      errorMessage: null,
-    })
+
+  onSuccessLoadGeoLocation = (position) => {
     console.log(position);
     const { latitude, longitude } = position.coords;
-    localStorage.setItem(POS_KEY, JSON.stringify({ latitude, longitude }));
-    this.loadNearbyPost();
-  }
-  onGeolocationFailure = () => {
-    this.setState({
-      loadingGeolocation: false,
-      errorMessage: 'Failed to load geolocation.',
-    })
+    localStorage.setItem(POS_KEY, JSON.stringify({ lat: latitude, lon: longitude }));
+    this.setState({ isLoadingGeoLocation: false, error: '' });
+    this.loadNearbyPosts();
   }
 
-  loadNearbyPost = (
-    position = JSON.parse(localStorage.getItem(POS_KEY)),
-    range = 20,
-  ) => {
-    this.setState({
-      loadingPosts: true,
-      errorMessage: null,
-    });
+  onFailedLoadGeoLocation = () => {
+    this.setState({ isLoadingGeoLocation: false, error: 'Failed to load geo location.' });
+  }
+
+  loadNearbyPosts = (center, radius) => {
+    const { lat, lon } = center ? center : JSON.parse(localStorage.getItem(POS_KEY));
+    const range = radius ? radius : 20;
     const token = localStorage.getItem(TOKEN_KEY);
-    fetch(`${API_ROOT}/search?lat=${position.latitude}&lon=${position.longitude}&range=${range}`, {
+    this.setState({ isLoadingPosts: true, error: '' });
+    return fetch(`${API_ROOT}/search?lat=${lat}&lon=${lon}&range=${range}`, {
       method: 'GET',
       headers: {
-        Authorization: `${AUTH_HEADER} ${token}`,
-      },
-    }).then((response) => {
-      if (response.ok) {
-        return response.json();
+        Authorization: `${AUTH_HEADER} ${token}`
       }
-      throw new Error('Failed to load posts.');
-    }).then((data) => {
-      console.log(data);
-      this.setState({
-        loadingPosts: false,
-        posts: data ? data : [],
+    })
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error('Failed to load post.');
+      })
+      .then((data) => {
+        console.log(data);
+        this.setState({ posts: data ? data : [], isLoadingPosts: false });
+      })
+      .catch((e) => {
+        console.error(e);
+        this.setState({ isLoadingPosts: false, error: e.message });
       });
-    }).catch((error) => {
-      this.setState({
-        loadingPosts: false,
-        errorMessage: error.message,
+  }
+
+  renderImagePosts() {
+    const { posts } = this.state;
+    const images = posts
+      .filter((post) => post.type === POST_TYPE_IMAGE)
+      .map((post) => {
+        return {
+          user: post.user,
+          src: post.url,
+          thumbnail: post.url,
+          caption: post.message,
+          thumbnailWidth: 400,
+          thumbnailHeight: 300,
+        };
       });
-    });
+    return <Gallery images={images}/>
   }
 
-  getPosts(type) {
-    if (this.state.errorMessage) {
-      return <div>{this.state.errorMessage}</div>
-    } else if(this.state.loadingGeolocation) {
-      return <Spin tip="Loading geolocation..."/>
-    } else if (this.state.loadingPosts) {
-      return <Spin tip="Loading posts..." />
-    } else if (this.state.posts.length > 0) {
-      if (type === POST_TYPE_IMAGE) {
-        return this.getImagePosts();
-      } else if (type === POST_TYPE_VIDEO) {
-        return this.getVideoPosts();
-      }
-    } else {
-      return 'No nearby posts.';
-    }
-  }
-
-  getImagePosts() {
-  const images = this.state.posts
-    .filter((post) => post.type === POST_TYPE_IMAGE)
-    .map((post) => {
-      return {
-        user: post.user,
-        src: post.url,
-        thumbnail: post.url,
-        caption: post.message,
-        thumbnailWidth: 400,
-        thumbnailHeight: 300,
-      }
-    });
-      return (<Gallery images={images}/>);
-  }
-
-  getVideoPosts() {
+  renderVideoPosts() {
+    const { posts } = this.state;
     return (
       <Row gutter={30}>
         {
-          this.state.posts
-            .filter((post) => post.type === POST_TYPE_VIDEO)
+          posts
+            .filter((post) => [POST_TYPE_VIDEO, POST_TYPE_UNKNOWN].includes(post.type))
             .map((post) => (
               <Col span={6} key={post.url}>
-                <video src={post.url} controls={true} className="video-block" />
-                <div>{`${post.user}: ${post.message}`}</div>
+                <video src={post.url} controls={true} className="video-block"/>
+                <p>{post.user}: {post.message}</p>
               </Col>
             ))
         }
@@ -141,19 +111,30 @@ export class Home extends React.Component {
     );
   }
 
-  componentDidMount() {
-      this.getGeolocation();
+  renderPosts(type) {
+    const { error, isLoadingGeoLocation, isLoadingPosts, posts } = this.state;
+    if (error) {
+      return error;
+    } else if (isLoadingGeoLocation) {
+      return <Spin tip="Loading geo location..."/>;
+    } else if (isLoadingPosts) {
+      return <Spin tip="Loading posts..."/>
+    } else if (posts.length > 0) {
+      return type === POST_TYPE_IMAGE ? this.renderImagePosts() : this.renderVideoPosts();
+    } else {
+      return 'No nearby posts';
+    }
   }
 
   render() {
-    const operations = <CreatePostButton onSuccess={this.loadNearbyPost} />;
+    const operations = <CreatePostButton loadNearbyPosts={this.loadNearbyPosts}/>;
     return (
       <Tabs tabBarExtraContent={operations} className="main-tabs">
         <TabPane tab="Image Posts" key="1">
-          {this.getPosts(POST_TYPE_IMAGE)}
+          {this.renderPosts(POST_TYPE_IMAGE)}
         </TabPane>
         <TabPane tab="Video Posts" key="2">
-          {this.getPosts(POST_TYPE_VIDEO)}
+          {this.renderPosts(POST_TYPE_VIDEO)}
         </TabPane>
         <TabPane tab="Map" key="3">
           <AroundMap
@@ -162,9 +143,10 @@ export class Home extends React.Component {
             containerElement={<div style={{ height: `600px` }} />}
             mapElement={<div style={{ height: `100%` }} />}
             posts={this.state.posts}
+            loadNearbyPosts={this.loadNearbyPosts}
           />
         </TabPane>
       </Tabs>
     );
   }
-};
+}

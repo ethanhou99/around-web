@@ -6,8 +6,7 @@ import '../styles/App.css';
 
 class App extends React.Component {
   state = {
-//    isLoggedIn: Boolean(localStorage.getItem(TOKEN_KEY)),
-      isLoggedIn: true,
+    isLoggedIn: Boolean(localStorage.getItem(TOKEN_KEY)),
   }
 
   handleLogin = (token) => {

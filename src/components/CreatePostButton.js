@@ -1,17 +1,10 @@
 import React from 'react';
 import { Modal, Button, message } from 'antd';
 import { CreatePostForm } from './CreatePostFrom.js';
-import {
-  POS_KEY,
-  TOKEN_KEY,
-  POSITION_NOISE,
-  API_ROOT,
-  AUTH_HEADER,
-} from '../constants';
+import { API_ROOT, AUTH_HEADER, TOKEN_KEY, POS_KEY, LOC_SHAKE } from '../constants';
 
 export class CreatePostButton extends React.Component {
   state = {
-    ModalText: 'Content of the modal',
     visible: false,
     confirmLoading: false,
   };
@@ -23,49 +16,42 @@ export class CreatePostButton extends React.Component {
   };
 
   handleOk = () => {
-    this.setState({
-      confirmLoading: true,
-    });
-
-    this.form.validateFieldsAndScroll((err, values) => {
+    this.form.validateFields((err, values) => {
+      console.log(values);
       if (!err) {
-        console.log('Received values of form: ', values);
-        const position = JSON.parse(localStorage.getItem(POS_KEY));
         const token = localStorage.getItem(TOKEN_KEY);
+        const { lat, lon } = JSON.parse(localStorage.getItem(POS_KEY));
+
         const formData = new FormData();
-        formData.append('lat', position.latitude + Math.random() * POSITION_NOISE * 2 - POSITION_NOISE);
-        formData.append('lon', position.longitude + Math.random() * POSITION_NOISE * 2 - POSITION_NOISE);
-        formData.append('message', values.message);
-        formData.append('image', values.image[0].originFileObj);
+        formData.set('lat', lat + Math.random() * LOC_SHAKE * 2 - LOC_SHAKE);
+        formData.set('lon', lon + Math.random() * LOC_SHAKE * 2 - LOC_SHAKE);
+        formData.set('message', values.message);
+        formData.set('image', values.image[0].originFileObj);
+
+        this.setState({ confirmLoading: true });
         fetch(`${API_ROOT}/post`, {
           method: 'POST',
-          body: formData,
           headers: {
-            Authorization: `${AUTH_HEADER} ${token}`,
+            Authorization: `${AUTH_HEADER} ${token}`
           },
-          dataType: 'text',
-        }).then((response) => {
-          if (response.ok) {
-            message.success('Create post succeed!');
-            this.form.resetFields();
-            this.setState({
-              visible: false,
-              confirmLoading: false,
-            });
-            if (this.props.onSuccess) {
-              this.props.onSuccess();
-            }
-          } else {
-            message.error('Create post failed.');
-            this.setState({
-              confirmLoading: false,
-            });
-          }
+          body: formData,
         })
-      } else {
-        this.setState({
-          confirmLoading: false,
-        });
+          .then((response) => {
+            if (response.ok) {
+              return this.props.loadNearbyPosts();
+            }
+            throw new Error('Failed to create post.');
+          })
+          .then(() => {
+            this.setState({ visible: false, confirmLoading: false });
+            this.form.resetFields();
+            message.success('Post created successfully!');
+          })
+          .catch((e) => {
+            console.error(e);
+            message.error('Failed to create post.');
+            this.setState({ confirmLoading: false });
+          });
       }
     });
   };
@@ -77,6 +63,10 @@ export class CreatePostButton extends React.Component {
     });
   };
 
+  getFormRef = (formInstance) => {
+    this.form = formInstance;
+  }
+
   render() {
     const { visible, confirmLoading } = this.state;
     return (
@@ -86,13 +76,13 @@ export class CreatePostButton extends React.Component {
         </Button>
         <Modal
           title="Create New Post"
-          okText="Create"
           visible={visible}
           onOk={this.handleOk}
+          okText='Create'
           confirmLoading={confirmLoading}
           onCancel={this.handleCancel}
         >
-          <CreatePostForm ref={this.saveFormRef} />
+          <CreatePostForm ref={this.getFormRef}/>
         </Modal>
       </div>
     );
