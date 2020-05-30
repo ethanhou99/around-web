@@ -1,5 +1,5 @@
 import React from 'react';
-import { Topbar } from './Topbar';
+import { TopBar } from './TopBar';
 import { Main } from './Main';
 import { TOKEN_KEY } from '../constants';
 import '../styles/App.css';
@@ -26,7 +26,7 @@ class App extends React.Component {
   render() {
     return (
       <div className="App">
-        <Topbar isLoggedIn={this.state.isLoggedIn} handleLogout={this.handleLogout} />
+        <TopBar isLoggedIn={this.state.isLoggedIn} handleLogout={this.handleLogout} />
         <Main isLoggedIn={this.state.isLoggedIn} handleLogin={this.handleLogin} />
       </div>
     );
