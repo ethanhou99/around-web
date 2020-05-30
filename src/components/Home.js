@@ -1,71 +1,113 @@
 import React from 'react';
 import { Tabs, Spin } from 'antd';
-import { GEO_OPTIONS, POS_KEY, API_ROOT, AUTH_HEADER, TOKEN_KEY } from '../constants';
 import { CreatePostButton } from './CreatePostButton';
 import { Gallery } from './Gallery';
-
+import {
+  GEO_OPTIONS,
+  POS_KEY,
+  TOKEN_KEY,
+  API_ROOT,
+  AUTH_HEADER,
+} from '../constants';
+import '../styles/Home.css';
 const { TabPane } = Tabs;
-
 export class Home extends React.Component {
   state = {
-    isLoadingGeoLocation: false,
-    isLoadingPosts: false,
-    error: '',
+    loadingGeolocation: false,
+    loadingPosts: false,
+    errorMessage: null,
     posts: [],
   }
-
-  componentDidMount() {
-    if ("geolocation" in navigator) {
-      this.setState({ isLoadingGeoLocation: true, error: '' });
+  getGeolocation() {
+    this.setState({
+      loadingGeolocation: true,
+      errorMessage: null,
+    });
+    if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
-        this.onSuccessLoadGeoLocation,
-        this.onFailedLoadGeoLocation,
+        this.onGeolocationSuccess,
+        this.onGeolocationFailure,
         GEO_OPTIONS,
       );
     } else {
-      this.setState({ error: 'Geolocation is not supported.'});
+      this.setState({
+        loadingGeolocation: false,
+        errorMessage: 'Your browser does not support geolocation.',
+      });
     }
   }
-
-  onSuccessLoadGeoLocation = (position) => {
+  onGeolocationSuccess = (position) => {
+    this.setState({
+      loadingGeolocation: false,
+      errorMessage: null,
+    })
     console.log(position);
     const { latitude, longitude } = position.coords;
-    localStorage.setItem(POS_KEY, JSON.stringify({ lat: latitude, lon: longitude }));
-    this.setState({ isLoadingGeoLocation: false, error: '' });
-    this.loadNearbyPosts();
+    localStorage.setItem(POS_KEY, JSON.stringify({ latitude, longitude }));
+    this.loadNearbyPost();
+  }
+  onGeolocationFailure = () => {
+    this.setState({
+      loadingGeolocation: false,
+      errorMessage: 'Failed to load geolocation.',
+    })
   }
 
-  onFailedLoadGeoLocation = () => {
+  loadNearbyPost = (
+    position = JSON.parse(localStorage.getItem(POS_KEY)),
+    range = 20,
+  ) => {
     this.setState({
-        isLoadingGeoLocation: false,
-        error: 'Failed to load geo location.'
+      loadingPosts: true,
+      errorMessage: null,
+    });
+    const token = localStorage.getItem(TOKEN_KEY);
+    fetch(`${API_ROOT}/search?lat=${position.latitude}&lon=${position.longitude}&range=${range}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `${AUTH_HEADER} ${token}`,
+      },
+    }).then((response) => {
+      if (response.ok) {
+        return response.json();
+      }
+      throw new Error('Failed to load posts.');
+    }).then((data) => {
+      console.log(data);
+      this.setState({
+        loadingPosts: false,
+        posts: data ? data : [],
+      });
+    }).catch((error) => {
+      this.setState({
+        loadingPosts: false,
+        errorMessage: error.message,
+      });
     });
   }
 
-  loadNearbyPosts = () => {
-    const { lat, lon } = JSON.parse(localStorage.getItem(POS_KEY));
-    const token = localStorage.getItem(TOKEN_KEY);
-    this.setState({ isLoadingPosts: true, error: '' });
-    fetch(`${API_ROOT}/search?lat=${lat}&lon=${lon}&range=20000`, {
-      method: 'GET',
-      headers: {
-        Authorization: `${AUTH_HEADER} ${token}`
-      }
-    })
-      .then((response) => {
-        if (response.ok) {
-          return response.json();
+  getImagePosts() {
+    if (this.state.errorMessage) {
+      return <div>{this.state.errorMessage}</div>
+    } else if(this.state.loadingGeolocation) {
+      return <Spin tip="Loading geolocation..."/>
+    } else if (this.state.loadingPosts) {
+      return <Spin tip="Loading posts..." />
+    } else if (this.state.posts.length > 0) {
+      const images = this.state.posts.map((post) => {
+        return {
+          user: post.user,
+          src: post.url,
+          thumbnail: post.url,
+          caption: post.message,
+          thumbnailWidth: 400,
+          thumbnailHeight: 300,
         }
-        throw new Error('Failed to load post.');
-      })
-      .then((data) => {
-        console.log(data);
-        this.setState({ posts: data ? data : [], isLoadingPosts: false });
-      })
-      .catch((e) => {
-        console.error(e);
-        this.setState({ isLoadingPosts: false, error: e.message });
       });
+      return (<Gallery images={images}/>);
+    } else {
+      return 'No nearby posts.';
+    }
   }
 
   renderImagePosts() {
@@ -93,20 +135,24 @@ export class Home extends React.Component {
     }
   }
 
+  componentDidMount() {
+      this.getGeolocation();
+  }
+
   render() {
-    const operations = <CreatePostButton />;;
+    const operations = <CreatePostButton onSuccess={this.loadNearbyPost} />;
     return (
       <Tabs tabBarExtraContent={operations} className="main-tabs">
         <TabPane tab="Image Posts" key="1">
-          {this.renderImagePosts()}
+          {this.getImagePosts()}
         </TabPane>
-        <TabPane tab="Video Posts" key="2">
+        <TabPane tab="Tab 2" key="2">
           Content of tab 2
         </TabPane>
-        <TabPane tab="Map" key="3">
+        <TabPane tab="Tab 3" key="3">
           Content of tab 3
         </TabPane>
       </Tabs>
     );
   }
-}
+};
