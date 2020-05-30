@@ -7,3 +7,4 @@ export const GEO_OPTIONS = {
 };
 export const POS_KEY = 'POS_KEY';
 export const AUTH_HEADER = 'Bearer';
+export const POSITION_NOISE = 0.02;
