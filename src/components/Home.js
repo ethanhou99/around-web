@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tabs, Spin } from 'antd';
+import { Tabs, Spin, Row, Col } from 'antd';
 import { CreatePostButton } from './CreatePostButton';
 import { Gallery } from './Gallery';
 import {
@@ -8,8 +8,11 @@ import {
   TOKEN_KEY,
   API_ROOT,
   AUTH_HEADER,
+  POST_TYPE_IMAGE,
+  POST_TYPE_VIDEO,
 } from '../constants';
 import '../styles/Home.css';
+
 const { TabPane } = Tabs;
 export class Home extends React.Component {
   state = {
@@ -86,7 +89,7 @@ export class Home extends React.Component {
     });
   }
 
-  getImagePosts() {
+  getPosts(type) {
     if (this.state.errorMessage) {
       return <div>{this.state.errorMessage}</div>
     } else if(this.state.loadingGeolocation) {
@@ -94,45 +97,47 @@ export class Home extends React.Component {
     } else if (this.state.loadingPosts) {
       return <Spin tip="Loading posts..." />
     } else if (this.state.posts.length > 0) {
-      const images = this.state.posts.map((post) => {
-        return {
-          user: post.user,
-          src: post.url,
-          thumbnail: post.url,
-          caption: post.message,
-          thumbnailWidth: 400,
-          thumbnailHeight: 300,
-        }
-      });
-      return (<Gallery images={images}/>);
+      if (type === POST_TYPE_IMAGE) {
+        return this.getImagePosts();
+      } else if (type === POST_TYPE_VIDEO) {
+        return this.getVideoPosts();
+      }
     } else {
       return 'No nearby posts.';
     }
   }
 
-  renderImagePosts() {
-    const { error, isLoadingGeoLocation, isLoadingPosts, posts } = this.state;
-    if (error) {
-      return error;
-    } else if (isLoadingGeoLocation) {
-      return <Spin tip="Loading geo location..."/>;
-    } else if (isLoadingPosts) {
-      return <Spin tip="Loading posts..."/>
-    } else if (posts.length > 0) {
-      const images = posts.map((post) => {
-        return {
-          user: post.user,
-          src: post.url,
-          thumbnail: post.url,
-          caption: post.message,
-          thumbnailWidth: 400,
-          thumbnailHeight: 300,
-        };
-      });
-      return <Gallery images={images}/>
-    } else {
-      return 'No nearby posts';
-    }
+  getImagePosts() {
+  const images = this.state.posts
+    .filter((post) => post.type === POST_TYPE_IMAGE)
+    .map((post) => {
+      return {
+        user: post.user,
+        src: post.url,
+        thumbnail: post.url,
+        caption: post.message,
+        thumbnailWidth: 400,
+        thumbnailHeight: 300,
+      }
+    });
+      return (<Gallery images={images}/>);
+  }
+
+  getVideoPosts() {
+    return (
+      <Row gutter={30}>
+        {
+          this.state.posts
+            .filter((post) => post.type === POST_TYPE_VIDEO)
+            .map((post) => (
+              <Col span={6} key={post.url}>
+                <video src={post.url} controls={true} className="video-block" />
+                <div>{`${post.user}: ${post.message}`}</div>
+              </Col>
+            ))
+        }
+      </Row>
+    );
   }
 
   componentDidMount() {
@@ -144,10 +149,10 @@ export class Home extends React.Component {
     return (
       <Tabs tabBarExtraContent={operations} className="main-tabs">
         <TabPane tab="Image Posts" key="1">
-          {this.getImagePosts()}
+          {this.getPosts(POST_TYPE_IMAGE)}
         </TabPane>
-        <TabPane tab="Tab 2" key="2">
-          Content of tab 2
+        <TabPane tab="Video Posts" key="2">
+          {this.getPosts(POST_TYPE_VIDEO)}
         </TabPane>
         <TabPane tab="Tab 3" key="3">
           Content of tab 3
