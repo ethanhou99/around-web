@@ -1,6 +1,7 @@
 import React from 'react';
-import { Tabs, Button, Spin } from 'antd';
-import { GEO_OPTIONS, POS_KEY, API_ROOT, AUTH_HEADER, TOKEN_KEY } from '../constants'
+import { Tabs, Spin } from 'antd';
+import { GEO_OPTIONS, POS_KEY, API_ROOT, AUTH_HEADER, TOKEN_KEY } from '../constants';
+import { CreatePostButton } from './CreatePostButton';
 import { Gallery } from './Gallery';
 
 const { TabPane } = Tabs;
@@ -35,7 +36,10 @@ export class Home extends React.Component {
   }
 
   onFailedLoadGeoLocation = () => {
-    this.setState({ isLoadingGeoLocation: false, error: 'Failed to load geo location.' });
+    this.setState({
+        isLoadingGeoLocation: false,
+        error: 'Failed to load geo location.'
+    });
   }
 
   loadNearbyPosts = () => {
@@ -90,7 +94,7 @@ export class Home extends React.Component {
   }
 
   render() {
-    const operations = <Button type="primary">Create New Post</Button>;
+    const operations = <CreatePostButton />;;
     return (
       <Tabs tabBarExtraContent={operations} className="main-tabs">
         <TabPane tab="Image Posts" key="1">
