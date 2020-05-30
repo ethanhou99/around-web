@@ -1,14 +1,7 @@
 import React from 'react';
+import { Form, Input, Button, message } from 'antd';
 import { Link } from 'react-router-dom';
-import { API_ROOT } from "../constants"
-import '../styles/Register.css';
-
-import {
-  Form,
-  Input,
-  Button,
-  message,
-} from 'antd';
+import { API_ROOT } from '../constants';
 
 class RegistrationForm extends React.Component {
   state = {
@@ -18,8 +11,7 @@ class RegistrationForm extends React.Component {
 
   handleSubmit = e => {
     e.preventDefault();
-    let lastResponse;
-    this.props.form.validateFieldsAndScroll((err, values) => {
+    this.props.form.validateFields((err, values) => {
       if (!err) {
         console.log('Received values of form: ', values);
         fetch(`${API_ROOT}/signup`, {
@@ -28,19 +20,22 @@ class RegistrationForm extends React.Component {
             username: values.username,
             password: values.password,
           }),
-        }).then((response) => {
-          lastResponse = response;
-          return response.text();
-        }, (error) => {
-          console.log('Error');
-        }).then((text) => {
-          if (lastResponse.ok) {
-            message.success(text);
+        })
+          .then((response) => {
+            if (response.ok) {
+              return response.text();
+            }
+            throw new Error(response.statusText);
+          })
+          .then((data) => {
+            console.log(data);
+            message.success('Registration succeed!');
             this.props.history.push('/login');
-          } else {
-            message.error(text);
-          }
-        });
+          })
+          .catch((err) => {
+            console.error(err);
+            message.error('Registration failed.');
+          });
       }
     });
   };
@@ -65,16 +60,6 @@ class RegistrationForm extends React.Component {
       form.validateFields(['confirm'], { force: true });
     }
     callback();
-  };
-
-  handleWebsiteChange = value => {
-    let autoCompleteResult;
-    if (!value) {
-      autoCompleteResult = [];
-    } else {
-      autoCompleteResult = ['.com', '.org', '.net'].map(domain => `${value}${domain}`);
-    }
-    this.setState({ autoCompleteResult });
   };
 
   render() {
@@ -104,15 +89,12 @@ class RegistrationForm extends React.Component {
     };
 
     return (
-      <Form {...formItemLayout} onSubmit={this.handleSubmit} className="register-form">
-        <Form.Item label="Username">
+      <Form {...formItemLayout} onSubmit={this.handleSubmit} className="register">
+        <Form.Item
+          label="Username"
+        >
           {getFieldDecorator('username', {
-            rules: [
-              {
-                required: true,
-                message: 'Please input your username!',
-              },
-            ],
+            rules: [{ required: true, message: 'Please input your username!' }],
           })(<Input />)}
         </Form.Item>
         <Form.Item label="Password" hasFeedback>
@@ -145,9 +127,7 @@ class RegistrationForm extends React.Component {
           <Button type="primary" htmlType="submit">
             Register
           </Button>
-          <div>
-            I already have an account, go back to <Link to="/login">Login</Link>
-          </div>
+          <p>I already have an account, go back to <Link to="/login">login</Link></p>
         </Form.Item>
       </Form>
     );

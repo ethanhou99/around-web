@@ -1,14 +1,11 @@
 import React from 'react';
+import { Form, Icon, Input, Button, message } from 'antd';
 import { Link } from 'react-router-dom';
 import { API_ROOT } from '../constants';
-import '../styles/Login.css';
-
-import { Form, Icon, Input, Button, message } from 'antd';
 
 class NormalLoginForm extends React.Component {
   handleSubmit = e => {
     e.preventDefault();
-    let lastResponse;
     this.props.form.validateFields((err, values) => {
       if (!err) {
         console.log('Received values of form: ', values);
@@ -18,19 +15,22 @@ class NormalLoginForm extends React.Component {
             username: values.username,
             password: values.password,
           }),
-        }).then((response) => {
-          lastResponse = response;
-          return response.text();
-        }, (error) => {
-          console.log('Error');
-        }).then((text) => {
-          if (lastResponse.ok) {
-            message.success('Login success!');
-            this.props.handleLogin(text);
-          } else {
-            message.error(text);
-          }
-        });
+        })
+          .then((response) => {
+            if (response.ok) {
+              return response.text();
+            }
+            throw new Error(response.stateText);
+          })
+          .then((data) => {
+            console.log(data);
+            this.props.handleLoginSucceed(data);
+            message.success('Login succeed!');
+          })
+          .catch((err) => {
+            console.error(err);
+            message.error('Login failed.');
+          });
       }
     });
   };
@@ -64,9 +64,7 @@ class NormalLoginForm extends React.Component {
           <Button type="primary" htmlType="submit" className="login-form-button">
             Log in
           </Button>
-          <div>
-            Or <Link to="/register">register now!</Link>
-          </div>
+          Or <Link to="/register">register now!</Link>
         </Form.Item>
       </Form>
     );
