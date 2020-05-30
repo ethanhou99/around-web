@@ -1,9 +1,8 @@
-.ant-form.login-form,
 .login-form {
-    width: 300px;
-    margin: 0 auto;
+  width: 300px;
+  margin: 0 auto;
 }
 
 .login-form-button {
-    width: 100%;
+  width: 300px;
 }
