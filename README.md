@@ -1,3 +1,22 @@
+#Around - A geolocation based social networdk
+
+## Brief Intro
+This repo is an fullstack application using ReactJS and Go. Users can share their image posts and video posts to the app and check the posts neraby. Also, this app contians Google AI API to do the face detection automatically, so users can also check nearby faces through the app.
+
+## Key words
+- React
+- Go
+- Elasticsearch
+- Grolocation
+- Ant Design
+
+## Demo
+- Check nearby posts from Google Map API
+<img src="https://github.com/ethanhou99/around-web/blob/master/src/assets/images/demo1.png" />
+- Check image and video posts from gallary
+<img src="https://github.com/ethanhou99/Ship-Detection/blob/master/images/Team_logo_v2.png" />
+
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
