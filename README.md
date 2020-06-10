@@ -1,4 +1,4 @@
-#Around - A geolocation based social networdk
+# Around - A geolocation based social networdk
 
 ## Brief Intro
 This repo is an fullstack application using ReactJS and Go. Users can share their image posts and video posts to the app and check the posts neraby. Also, this app contians Google AI API to do the face detection automatically, so users can also check nearby faces through the app.
