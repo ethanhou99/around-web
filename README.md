@@ -14,7 +14,7 @@ This repo is an fullstack application using ReactJS and Go. Users can share thei
 - Check nearby posts from Google Map API
 <img src="https://github.com/ethanhou99/around-web/blob/master/src/assets/images/demo1.png" />
 - Check image and video posts from gallary
-<img src="https://github.com/ethanhou99/Ship-Detection/blob/master/images/Team_logo_v2.png" />
+<img src="https://github.com/ethanhou99/around-web/blob/master/src/assets/images/demo2.png" />
 
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
