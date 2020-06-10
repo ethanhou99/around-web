@@ -38,7 +38,7 @@ export class CreatePostButton extends React.Component {
         })
           .then((response) => {
             if (response.ok) {
-              return this.props.loadNearbyPosts();
+              return this.props.loadPostsByTopic();
             }
             throw new Error('Failed to create post.');
           })
