@@ -13,6 +13,7 @@ This repo is an fullstack application using ReactJS and Go. Users can share thei
 ## Demo
 - Check nearby posts from Google Map API
 <img src="https://github.com/ethanhou99/around-web/blob/master/src/assets/images/demo1.png" />
+
 - Check image and video posts from gallary
 <img src="https://github.com/ethanhou99/around-web/blob/master/src/assets/images/demo2.png" />
 
